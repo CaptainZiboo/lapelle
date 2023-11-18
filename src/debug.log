@@ -1,0 +1,50 @@
+debug: Ouverture de la page...
+debug: Redirection réussie!
+debug: Champ #login trouvé.
+debug: Champ #login rempli avec succès.
+error: Une erreur s'est produite : Navigation timeout of 30000 ms exceeded {"name":"TimeoutError","stack":"TimeoutError: Navigation timeout of 30000 ms exceeded\n    at new Deferred (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:33:28)\n    at Function.create (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:85:12)\n    at new LifecycleWatcher (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\LifecycleWatcher.ts:180:42)\n    at CdpFrame.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\Frame.ts:219:21)\n    at CdpFrame.<anonymous> (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\decorators.ts:71:21)\n    at CdpPage.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\api\\Page.ts:1613:35)\n    at D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:29:56\n    at Generator.next (<anonymous>)\n    at fulfilled (D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:5:58)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)"}
+debug: Fermeture du navigateur.
+debug: Ouverture de la page...
+debug: Redirection réussie!
+debug: Champ #login trouvé.
+debug: Champ #login rempli avec succès.
+error: Une erreur s'est produite : Navigation timeout of 30000 ms exceeded {"name":"TimeoutError","stack":"TimeoutError: Navigation timeout of 30000 ms exceeded\n    at new Deferred (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:33:28)\n    at Function.create (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:85:12)\n    at new LifecycleWatcher (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\LifecycleWatcher.ts:180:42)\n    at CdpFrame.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\Frame.ts:219:21)\n    at CdpFrame.<anonymous> (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\decorators.ts:71:21)\n    at CdpPage.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\api\\Page.ts:1613:35)\n    at D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:30:56\n    at Generator.next (<anonymous>)\n    at fulfilled (D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:5:58)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)"}
+debug: Fermeture du navigateur.
+debug: Ouverture de la page...
+debug: Redirection réussie!
+debug: Champ #login trouvé.
+debug: Champ #login rempli avec succès.
+error: Une erreur s'est produite : Navigation timeout of 30000 ms exceeded {"name":"TimeoutError","stack":"TimeoutError: Navigation timeout of 30000 ms exceeded\n    at new Deferred (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:33:28)\n    at Function.create (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:85:12)\n    at new LifecycleWatcher (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\LifecycleWatcher.ts:180:42)\n    at CdpFrame.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\Frame.ts:219:21)\n    at CdpFrame.<anonymous> (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\decorators.ts:71:21)\n    at CdpPage.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\api\\Page.ts:1613:35)\n    at D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:29:56\n    at Generator.next (<anonymous>)\n    at fulfilled (D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:5:58)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)"}
+debug: Fermeture du navigateur.
+debug: Ouverture de la page...
+debug: Redirection réussie!
+debug: Champ #login trouvé.
+debug: Champ #login rempli avec succès.
+debug: Champ #login vérifié après le remplissage.
+error: Une erreur s'est produite : Navigation timeout of 30000 ms exceeded {"name":"TimeoutError","stack":"TimeoutError: Navigation timeout of 30000 ms exceeded\n    at new Deferred (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:33:28)\n    at Function.create (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\Deferred.ts:85:12)\n    at new LifecycleWatcher (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\LifecycleWatcher.ts:180:42)\n    at CdpFrame.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\Frame.ts:219:21)\n    at CdpFrame.<anonymous> (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\util\\decorators.ts:71:21)\n    at CdpPage.waitForNavigation (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\api\\Page.ts:1613:35)\n    at D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:43:56\n    at Generator.next (<anonymous>)\n    at fulfilled (D:\\Developpement\\apps\\evolve\\new\\lapelle\\src\\utils\\lapelle.ts:5:58)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)"}
+debug: Fermeture du navigateur.
+debug: Ouverture de la page...
+debug: Redirection réussie!
+debug: Champ #login trouvé.
+debug: Champ #login rempli avec succès.
+debug: Champ #login vérifié après le remplissage.
+error: Une erreur s'est produite : Navigating frame was detached {"stack":"Error: Navigating frame was detached\n    at LifecycleWatcher.#onFrameDetached (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\LifecycleWatcher.ts:220:9)\n    at D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\lib\\cjs\\third_party\\mitt\\mitt.js:1:732\n    at Array.map (<anonymous>)\n    at Object.emit (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\lib\\cjs\\third_party\\mitt\\mitt.js:1:716)\n    at CdpFrame.emit (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\common\\EventEmitter.ts:162:19)\n    at FrameManager.#removeFramesRecursively (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\FrameManager.ts:559:11)\n    at FrameManager.#onClientDisconnect (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\FrameManager.ts:126:36)"}
+debug: Ouverture de la page...
+debug: Redirection réussie!
+debug: Champ #login trouvé.
+debug: Champ #login rempli avec succès.
+debug: Champ #login vérifié après le remplissage.
+error: Une erreur s'est produite : Navigating frame was detached {"stack":"Error: Navigating frame was detached\n    at LifecycleWatcher.#onFrameDetached (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\LifecycleWatcher.ts:220:9)\n    at D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\lib\\cjs\\third_party\\mitt\\mitt.js:1:732\n    at Array.map (<anonymous>)\n    at Object.emit (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\lib\\cjs\\third_party\\mitt\\mitt.js:1:716)\n    at CdpFrame.emit (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\common\\EventEmitter.ts:162:19)\n    at FrameManager.#removeFramesRecursively (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\FrameManager.ts:559:11)\n    at FrameManager.#onClientDisconnect (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\cdp\\FrameManager.ts:126:36)"}
+debug: Ouverture de la page...
+debug: Redirection réussie!
+debug: Champ #login trouvé.
+debug: Champ #login rempli avec succès.
+debug: Champ #login vérifié après le remplissage.
+debug: Page après la redirection chargée avec succès.
+debug: Champ #userNameInput rempli avec succès.
+debug: Champ #passwordInput présent.
+debug: Champ #passwordInput rempli avec succès.
+debug: Have been redirected to bla bla bla
+debug: Accès à la page après connexion réussi!
+error: Une erreur s'est produite : Waiting for selector `#body_presences` failed: Waiting failed: 30000ms exceeded {"name":"TimeoutError","stack":"TimeoutError: Waiting for selector `#body_presences` failed: Waiting failed: 30000ms exceeded\n    at new WaitTask (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\common\\WaitTask.ts:92:28)\n    at IsolatedWorld.waitForFunction (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\api\\Realm.ts:84:22)\n    at Function.waitFor (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\common\\QueryHandler.ts:169:50)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async CdpFrame.waitForSelector (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\api\\Frame.ts:696:13)\n    at async CdpPage.waitForSelector (D:\\Developpement\\apps\\evolve\\new\\lapelle\\node_modules\\puppeteer-core\\src\\api\\Page.ts:2907:12)"}
+debug: Fermeture du navigateur.

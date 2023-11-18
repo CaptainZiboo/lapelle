@@ -2,7 +2,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 
 export const command = {
   data: new SlashCommandBuilder()
-    .setName("LaPelle")
+    .setName("lapelle")
     .setDescription("Réponds avec le statut de l'appel du cours !"),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.reply(
@@ -10,3 +10,5 @@ export const command = {
     );
   },
 };
+
+export default command;

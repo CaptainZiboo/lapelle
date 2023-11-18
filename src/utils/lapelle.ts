@@ -1,10 +1,11 @@
 import puppeteer from "puppeteer";
-import dotenv from "dotenv";
 import { logger } from "./logger";
 
-dotenv.config();
+export async function getLapelle() {
+  if (!process.env.EMAIL || !process.env.MOT_DE_PASSE) {
+    return { error: "Des variables d'environnement sont manquantes..." };
+  }
 
-export async function lapelle(callback: () => void) {
   const browser = await puppeteer.launch({
     headless: false,
   });
@@ -23,8 +24,22 @@ export async function lapelle(callback: () => void) {
 
       await page.waitForSelector("#login");
       logger.debug("Champ #login trouvé.");
+
+      // Remplir le champ #login avec l'email
       await page.type("#login", process.env.EMAIL || "");
       logger.debug("Champ #login rempli avec succès.");
+
+      // Attendre jusqu'à ce que la valeur du champ #login soit correctement définie
+      await page.waitForFunction(
+        (expectedValue) => {
+          const input = document.querySelector("#login") as HTMLInputElement;
+          return input && input.value === expectedValue;
+        },
+        {},
+        process.env.EMAIL || ""
+      );
+
+      logger.debug("Champ #login vérifié après le remplissage.");
 
       await Promise.all([page.click("#btn_next"), page.waitForNavigation()]);
 
@@ -150,7 +165,3 @@ export async function lapelle(callback: () => void) {
     logger.debug("Fermeture du navigateur.");
   }
 }
-
-lapelle(() => {
-  console.log("L'appel est ouvert !");
-});
