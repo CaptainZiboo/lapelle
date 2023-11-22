@@ -16,7 +16,9 @@ export const Lapelle: Command = {
           for (const formation of year.formations) {
             if (
               interaction.channelId ===
-              process.env[`${diplome}_${year}_${formation}_CHANNEL`]
+              process.env[
+                `${diplome.value}_${year.value}_${formation.value}_CHANNEL`
+              ]
             ) {
               options = {
                 diplome: diplome.value,

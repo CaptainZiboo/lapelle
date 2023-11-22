@@ -15,7 +15,7 @@ export const Image: Command = {
     .setDescription("Réponds avec l'image de Lapelle !"),
   async execute(interaction: CommandInteraction) {
     await interaction.reply({
-      files: [path.join(__dirname, "../assets/shovel.png")],
+      files: [path.join(__dirname, "../../../assets/shovel.png")],
     });
   },
 };
