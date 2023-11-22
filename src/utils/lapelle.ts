@@ -1,33 +1,70 @@
 import puppeteer from "puppeteer";
 import { logger } from "./logger";
+import { LoopLapelleOptions } from "..";
+import { DateTime } from "luxon";
 
-export async function getLapelle() {
-  if (!process.env.EMAIL || !process.env.MOT_DE_PASSE) {
+type LapelleCallbackArgs =
+  | {
+      open: boolean;
+      message: string;
+      cours: {
+        heure: string;
+        prof: string;
+        cours: string;
+        presence: string;
+      };
+    }
+  | {
+      open: false;
+      message: string;
+      cours?: {
+        heure: string;
+        prof: string;
+        cours: string;
+        presence: string;
+      };
+    };
+
+export async function getLapelle(
+  callback: (payload: LapelleCallbackArgs) => void | Promise<void>,
+  options: LoopLapelleOptions
+) {
+  const email =
+    process.env[
+      `${options.diplome}_${options.year}_${options.formation}_EMAIL`
+    ];
+  const password =
+    process.env[
+      `${options.diplome}_${options.year}_${options.formation}_PASSWORD`
+    ];
+  if (!email || !password) {
+    console.log("Missing environment variables...");
     return { error: "Des variables d'environnement sont manquantes..." };
   }
 
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: "new",
+    args: ["--no-sandbox"],
   });
 
   const page = await browser.newPage();
 
   try {
-    logger.debug("Ouverture de la page...");
+    console.log("Ouverture de la page...");
 
     await page.goto("https://www.leonard-de-vinci.net/student/presences/");
     await page.waitForSelector("body");
 
     const currentURL = page.url();
     if (currentURL === "https://www.leonard-de-vinci.net/") {
-      logger.debug("Redirection réussie!");
+      console.log("Redirection réussie!");
 
       await page.waitForSelector("#login");
-      logger.debug("Champ #login trouvé.");
+      console.log("Champ #login trouvé.");
 
       // Remplir le champ #login avec l'email
-      await page.type("#login", process.env.EMAIL || "");
-      logger.debug("Champ #login rempli avec succès.");
+      await page.type("#login", email);
+      console.log("Champ #login rempli avec succès.");
 
       // Attendre jusqu'à ce que la valeur du champ #login soit correctement définie
       await page.waitForFunction(
@@ -36,15 +73,15 @@ export async function getLapelle() {
           return input && input.value === expectedValue;
         },
         {},
-        process.env.EMAIL || ""
+        email
       );
 
-      logger.debug("Champ #login vérifié après le remplissage.");
+      console.log("Champ #login vérifié après le remplissage.");
 
       await Promise.all([page.click("#btn_next"), page.waitForNavigation()]);
 
       await page.waitForSelector("#userNameInput");
-      logger.debug("Page après la redirection chargée avec succès.");
+      console.log("Page après la redirection chargée avec succès.");
 
       const userNameInput = await page.$("#userNameInput");
       if (userNameInput) {
@@ -53,23 +90,23 @@ export async function getLapelle() {
         });
       }
 
-      await page.type("#userNameInput", process.env.EMAIL || "");
-      logger.debug("Champ #userNameInput rempli avec succès.");
+      await page.type("#userNameInput", email);
+      console.log("Champ #userNameInput rempli avec succès.");
 
       await page.waitForSelector("#passwordInput");
-      logger.debug("Champ #passwordInput présent.");
+      console.log("Champ #passwordInput présent.");
 
       await page.waitForTimeout(3000);
 
-      await page.type("#passwordInput", process.env.MOT_DE_PASSE || "");
-      logger.debug("Champ #passwordInput rempli avec succès.");
+      await page.type("#passwordInput", password);
+      console.log("Champ #passwordInput rempli avec succès.");
 
       await Promise.all([
         page.click("#submitButton"),
         page.waitForNavigation(),
       ]);
 
-      logger.debug("Have been redirected to bla bla bla");
+      console.log("Have been redirected to bla bla bla");
 
       await Promise.all([
         page.goto("https://www.leonard-de-vinci.net/student/presences/"),
@@ -83,7 +120,7 @@ export async function getLapelle() {
         currentURLAfterLogin ===
         "https://www.leonard-de-vinci.net/student/presences/"
       ) {
-        logger.debug("Accès à la page après connexion réussi!");
+        console.log("Accès à la page après connexion réussi!");
       } else {
         logger.error(
           "La redirection après connexion a échoué. URL actuelle :",
@@ -93,7 +130,7 @@ export async function getLapelle() {
     } else if (
       currentURL === "https://www.leonard-de-vinci.net/student/presences/"
     ) {
-      logger.debug("Vous êtes déjà connecté, passage à la suite du programme.");
+      console.log("Vous êtes déjà connecté, passage à la suite du programme.");
     } else {
       logger.error("La redirection a échoué. URL actuelle :", currentURL);
     }
@@ -102,53 +139,111 @@ export async function getLapelle() {
 
     const rows = await page.$$("#body_presences tr");
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinutes = now.getMinutes();
 
     let currentCourseFound = false;
     for (const row of rows) {
-      const heureText = await row.$eval("td:nth-child(1)", (td) =>
+      const heure = await row.$eval("td:nth-child(1)", (td) =>
+        td && td.textContent ? td.textContent.trim().replace(/\s+/g, "") : ""
+      );
+
+      console.log("HEURE", heure);
+
+      const prof = await row.$eval("td:nth-child(2)", (td) =>
         td && td.textContent ? td.textContent.trim() : ""
       );
 
-      const heureCleaned = heureText.replace(/\s+/g, "");
-      const [heureDebut, heureFin] = heureCleaned.split("-");
+      console.log("PROF", prof);
+
+      const cours = await row.$eval("td:nth-child(3)", (td) =>
+        td && td.textContent ? td.textContent.trim() : ""
+      );
+
+      console.log("COURS", cours);
+
+      const [heureDebut, heureFin] = heure.split("-");
       const [debutHours, debutMinutes] = heureDebut.split(":").map(Number);
       const debutTime = new Date();
       debutTime.setHours(debutHours, debutMinutes, 0);
+      console.log(debutTime);
 
       const [finHours, finMinutes] = heureFin.split(":").map(Number);
       const finTime = new Date();
       finTime.setHours(finHours, finMinutes, 0);
+      console.log(finTime);
+
+      console.log("checking course time");
 
       if (now >= debutTime && now <= finTime) {
+        console.log("Course is currently up");
         const lienRelevePresence = await row.$("td:nth-child(4) a");
+        console.log("Lien relevé", lienRelevePresence);
         if (lienRelevePresence) {
           await lienRelevePresence.click();
           await page.waitForTimeout(3000);
 
-          const isPresenceOpen = await page.evaluate(() => {
-            const setPresenceSpan = document.querySelector(
-              "span#set-presence"
-            ) as HTMLElement | null;
-            return (
-              setPresenceSpan?.textContent?.includes("Valider la présence") ||
-              false
-            );
+          // const isPresenceOpen =
+
+          const bodyPresenceDiv = await page.$("#body_presence");
+
+          if (!bodyPresenceDiv) {
+            console.error("THERE IS A PROBLEM HUSTON");
+            throw new Error("THERE IS A PROBLEM HUSTON");
+          }
+
+          const state = await bodyPresenceDiv.evaluate(() => {
+            const dangerAlert = document.querySelector(".alert.alert-danger");
+            const successAlert = document.querySelector(".alert.alert-success");
+            const setPresenceSpan = document.querySelector("span#set-presence");
+
+            if (dangerAlert && dangerAlert.textContent) {
+              return {
+                open: false,
+                message: dangerAlert.textContent.trim(),
+              };
+            } else if (successAlert && successAlert.textContent) {
+              return {
+                open: true,
+                message: successAlert.textContent.trim(),
+              };
+            } else if (
+              setPresenceSpan &&
+              setPresenceSpan.textContent?.includes("Valider la présence")
+            ) {
+              return {
+                open: true,
+                message: "L'appel est ouvert",
+              };
+            } else {
+              // Si aucun des cas ci-dessus n'est rencontré, l'état est indéterminé
+              return {
+                open: false,
+                message: "L'état de l'appel est indéterminé",
+              };
+            }
           });
 
-          if (isPresenceOpen) {
-            logger.debug("L'appel est ouvert");
-          } else {
-            logger.debug("L'appel est fermé");
-          }
+          console.log("state", state);
+
+          const presence = page.url();
+
+          callback({
+            ...state,
+            cours: {
+              heure,
+              prof,
+              cours,
+              presence,
+            },
+          });
 
           currentCourseFound = true;
           break;
         } else {
-          logger.error(
-            "Lien de relevé de présence non trouvé pour le cours actuel."
-          );
+          console.log("Impossible de trouver le lien du relevé de présence.");
+          callback({
+            open: false,
+            message: "Impossible de trouver le lien du relevé de présence.",
+          });
         }
       }
     }
@@ -156,12 +251,20 @@ export async function getLapelle() {
     await page.waitForTimeout(10000);
 
     if (!currentCourseFound) {
-      logger.debug("Aucun cours n'a lieu actuellement.");
+      console.log("Aucun cours n'a lieu actuellement.");
+      callback({
+        open: false,
+        message: "Aucun cours n'a lieu actuellement.",
+      });
     }
   } catch (error) {
     logger.error("Une erreur s'est produite :", error);
+    callback({
+      open: false,
+      message: `Une erreur s'est produite: ${error}`,
+    });
   } finally {
     await browser.close();
-    logger.debug("Fermeture du navigateur.");
+    console.log("Fermeture du navigateur.");
   }
 }
