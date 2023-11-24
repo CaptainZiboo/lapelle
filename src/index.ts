@@ -65,16 +65,20 @@ async function start() {
       await command.execute(interaction);
     } catch (error) {
       console.error(error);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content: "There was an error while executing this command!",
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content: "There was an error while executing this command!",
-          ephemeral: true,
-        });
+      try {
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({
+            content: "There was an error while executing this command!",
+            ephemeral: true,
+          });
+        } else {
+          await interaction.reply({
+            content: "There was an error while executing this command!",
+            ephemeral: true,
+          });
+        }
+      } catch (error) {
+        console.error(error);
       }
     }
   });
@@ -95,30 +99,34 @@ interface SendMessageOptions {
 }
 
 const send = (message: string, options: SendMessageOptions) => {
-  const GUILD_ID =
-    process.env[
-      `${options.ecole.diplome}_${options.ecole.year}_${options.ecole.formation}_GUILD`
-    ] || "";
-  const CHANNEL_ID =
-    process.env[
-      `${options.ecole.diplome}_${options.ecole.year}_${options.ecole.formation}_CHANNEL`
-    ] || "";
-  const ROLE_ID =
-    process.env[
-      `${options.ecole.diplome}_${options.ecole.year}_${options.ecole.formation}_ROLE`
-    ] || "";
+  try {
+    const GUILD_ID =
+      process.env[
+        `${options.ecole.diplome}_${options.ecole.year}_${options.ecole.formation}_GUILD`
+      ] || "";
+    const CHANNEL_ID =
+      process.env[
+        `${options.ecole.diplome}_${options.ecole.year}_${options.ecole.formation}_CHANNEL`
+      ] || "";
+    const ROLE_ID =
+      process.env[
+        `${options.ecole.diplome}_${options.ecole.year}_${options.ecole.formation}_ROLE`
+      ] || "";
 
-  const guild = client.guilds.cache.get(GUILD_ID);
-  if (guild) {
-    const channel = guild.channels.cache.get(CHANNEL_ID);
-    const role = guild.roles.cache.get(ROLE_ID);
+    const guild = client.guilds.cache.get(GUILD_ID);
+    if (guild) {
+      const channel = guild.channels.cache.get(CHANNEL_ID);
+      const role = guild.roles.cache.get(ROLE_ID);
 
-    if (channel && channel instanceof TextChannel && role) {
-      channel.send({
-        content: template(message, { role: `<@&${role.id}>` }),
-        files: [path.join(__dirname, "../assets/shovel.png")],
-      });
+      if (channel && channel instanceof TextChannel && role) {
+        channel.send({
+          content: template(message, { role: `<@&${role.id}>` }),
+          files: [path.join(__dirname, "../assets/shovel.png")],
+        });
+      }
     }
+  } catch (error) {
+    console.error(error);
   }
 };
 
