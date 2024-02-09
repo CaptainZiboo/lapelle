@@ -77,6 +77,39 @@ export class PermissionsCommand extends BaseCommand {
   }
 
   async run({ interaction, client, handler }: SlashCommandProps) {
+    // Ensure the command is used in a guild
+    if (!interaction.inGuild()) {
+      interaction.reply({
+        embeds: [
+          SimpleEmbed({
+            content:
+              "Cette commande ne peut être utilisée que dans un serveur.",
+            emoji: "❌",
+          }),
+        ],
+      });
+      return;
+    }
+
+    // Create guild permissions if they doesn't exist
+    const result = await db
+      .insert(permissions)
+      .values({
+        guild_id: interaction.guildId!,
+        user_ids: [],
+        role_ids: [],
+      })
+      .onConflictDoUpdate({
+        target: [permissions.guild_id],
+        set: {
+          guild_id: interaction.guildId!,
+        },
+      })
+      .returning();
+
+    this.permission = result[0];
+
+    // Ensure the user is an administrator
     const isAdministrator = await this.isAdministrator({
       interaction,
       client,
@@ -86,24 +119,6 @@ export class PermissionsCommand extends BaseCommand {
     if (!isAdministrator) {
       throw new InsufficientPermissions();
     }
-    let permission: Permission | undefined =
-      await db.query.permissions.findFirst({
-        where: eq(permissions.guild_id, interaction.guildId!),
-      });
-
-    if (!permission) {
-      const result = await db
-        .insert(permissions)
-        .values({
-          guild_id: interaction.guildId!,
-          user_ids: [],
-          role_ids: [],
-        })
-        .returning();
-      permission = result[0];
-    }
-
-    this.permission = permission;
 
     // Show the permission
     const actionMessage = await this.show(interaction);
@@ -116,7 +131,7 @@ export class PermissionsCommand extends BaseCommand {
           i.user.id === interaction.user.id &&
           [`${this.nonce}-permissions-manage`].includes(i.customId),
         componentType: ComponentType.Button,
-        time: 180_000,
+        time: 20_000,
       });
 
       let running: boolean = false;
@@ -153,11 +168,7 @@ export class PermissionsCommand extends BaseCommand {
         if (reason === "time") {
           this.timeout = true;
           await interaction.editReply({
-            components: [
-              new ActionRowBuilder<ButtonBuilder>({
-                components: [],
-              }),
-            ],
+            components: [],
           });
           if (running) return;
           resolve(true);
@@ -240,25 +251,51 @@ export class PermissionsCommand extends BaseCommand {
         new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
           usersSelect
         ),
+        new ActionRowBuilder<ButtonBuilder>({
+          components: [
+            new ButtonBuilder({
+              customId: `${this.nonce}-manage-user-none`,
+              label: "N'autoriser aucun utilisateur",
+              style: ButtonStyle.Secondary,
+              emoji: "🙅‍♂️",
+            }),
+          ],
+        }),
       ],
     });
 
-    const usersInteraction = await usersMessage.awaitMessageComponent({
-      filter: (i) =>
-        i.user.id === interaction.user.id &&
-        i.customId === `${this.nonce}-manage-user-select`,
-      componentType: ComponentType.UserSelect,
-      time: 60000,
-    });
+    const usersInteraction = await Promise.race([
+      usersMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-manage-user-select`,
+        componentType: ComponentType.UserSelect,
+        time: 60000,
+      }),
+      usersMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-manage-user-none`,
+        componentType: ComponentType.Button,
+        time: 60000,
+      }),
+    ]);
 
     this.interaction = usersInteraction;
 
-    await db
+    const selectedUsers = usersInteraction.isUserSelectMenu()
+      ? usersInteraction.values
+      : [];
+
+    const updatedPermission = await db
       .update(permissions)
       .set({
-        user_ids: usersInteraction.values,
+        user_ids: selectedUsers,
       })
-      .where(eq(permissions._id, this.permission._id));
+      .where(eq(permissions._id, this.permission._id))
+      .returning();
+
+    this.permission = updatedPermission[0];
 
     await Promise.all([
       usersInteraction.update({
@@ -270,7 +307,6 @@ export class PermissionsCommand extends BaseCommand {
         ],
         components: [],
       }),
-
       this.update(),
     ]);
   }
@@ -295,25 +331,51 @@ export class PermissionsCommand extends BaseCommand {
         new ActionRowBuilder<RoleSelectMenuBuilder>().addComponents(
           rolesSelect
         ),
+        new ActionRowBuilder<ButtonBuilder>({
+          components: [
+            new ButtonBuilder({
+              customId: `${this.nonce}-manage-role-none`,
+              label: "N'autoriser aucun role",
+              style: ButtonStyle.Secondary,
+              emoji: "🙅‍♂️",
+            }),
+          ],
+        }),
       ],
     });
 
-    const rolesInteraction = await rolesMessage.awaitMessageComponent({
-      filter: (i) =>
-        i.user.id === interaction.user.id &&
-        i.customId === `${this.nonce}-manage-role-select`,
-      componentType: ComponentType.RoleSelect,
-      time: 60000,
-    });
+    const rolesInteraction = await Promise.race([
+      rolesMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-manage-role-select`,
+        componentType: ComponentType.RoleSelect,
+        time: 60000,
+      }),
+      rolesMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-manage-role-none`,
+        componentType: ComponentType.Button,
+        time: 60000,
+      }),
+    ]);
 
     this.interaction = rolesInteraction;
 
-    await db
+    const selectedRoles = rolesInteraction.isRoleSelectMenu()
+      ? rolesInteraction.values
+      : [];
+
+    const updatedPermission = await db
       .update(permissions)
       .set({
-        role_ids: rolesInteraction.values,
+        role_ids: selectedRoles,
       })
-      .where(eq(permissions._id, this.permission._id));
+      .where(eq(permissions._id, this.permission._id))
+      .returning();
+
+    this.permission = updatedPermission[0];
 
     await Promise.all([
       rolesInteraction.update({

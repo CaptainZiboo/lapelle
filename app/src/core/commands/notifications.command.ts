@@ -30,6 +30,7 @@ import { and, eq } from "drizzle-orm";
 import { Group, Permission, permissions, users } from "../database/entities";
 
 export class NotificationsCommand extends BaseCommand {
+  private noRole: boolean = false;
   private permission!: Permission;
 
   getButtons() {
@@ -151,23 +152,12 @@ export class NotificationsCommand extends BaseCommand {
   async run({ interaction, client, handler }: SlashCommandProps) {
     const isPrivate = !interaction.inGuild();
 
-    if (!isPrivate) {
-      const isManager = await this.isManager({ interaction, client, handler });
-
-      if (!isManager) {
-        throw new InsufficientPermissions(
-          "Vous ne pouvez pas modifier les notifications de ce serveur."
-        );
-      }
-
-      await this.guild(interaction);
+    if (isPrivate) {
+      await this.private(interaction);
       return;
     }
 
-    await this.private(interaction);
-  }
-
-  async guild(interaction: ChatInputCommandInteraction) {
+    // Create guild permissions if not exists
     const result = await db
       .insert(permissions)
       .values({
@@ -175,13 +165,28 @@ export class NotificationsCommand extends BaseCommand {
         user_ids: [],
         role_ids: [],
       })
-      .onConflictDoNothing({
-        target: [permissions._id],
+      .onConflictDoUpdate({
+        target: [permissions.guild_id],
+        set: {
+          guild_id: interaction.guildId!,
+        },
       })
       .returning();
 
     this.permission = result[0];
 
+    const isManager = await this.isManager({ interaction, client, handler });
+
+    if (!isManager) {
+      throw new InsufficientPermissions(
+        "Vous ne pouvez pas modifier les notifications de ce serveur."
+      );
+    }
+
+    await this.guild(interaction);
+  }
+
+  async guild(interaction: ChatInputCommandInteraction) {
     const actionMessage = await this.show(interaction);
 
     if (!actionMessage) return;
@@ -441,7 +446,7 @@ export class NotificationsCommand extends BaseCommand {
     const roleSelect = new RoleSelectMenuBuilder({
       customId: `${this.nonce}-notification-add-role-select`,
       placeholder: "Sélectionnez les rôles à mentionnner",
-      minValues: 1,
+      minValues: 0,
       maxValues: 5,
     });
 
@@ -455,27 +460,44 @@ export class NotificationsCommand extends BaseCommand {
       ],
       components: [
         new ActionRowBuilder<RoleSelectMenuBuilder>().addComponents(roleSelect),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder({
+            customId: `${this.nonce}-notification-add-role-none`,
+            label: "Ne pas mentionner de rôle",
+            style: ButtonStyle.Secondary,
+            emoji: "🙅‍♂️",
+          })
+        ),
       ],
     });
 
-    const roleInteraction = await roleMessage.awaitMessageComponent({
-      filter: (i) =>
-        i.user.id === interaction.user.id &&
-        i.customId === `${this.nonce}-notification-add-role-select`,
-      componentType: ComponentType.RoleSelect,
-      time: 60_000,
-    });
+    const roleInteraction = await Promise.race([
+      roleMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-notification-add-role-select`,
+        componentType: ComponentType.RoleSelect,
+        time: 60_000,
+      }),
+      roleMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-notification-add-role-none`,
+        componentType: ComponentType.Button,
+        time: 60_000,
+      }),
+    ]);
 
     this.interaction = roleInteraction;
 
-    if (!group) {
-      return;
-    }
+    const roles = roleInteraction.isRoleSelectMenu()
+      ? roleInteraction.values
+      : [];
 
     await db.insert(notifications).values({
       guild_id: interaction.guildId!,
       channel_id: channelInteraction.values[0],
-      role_ids: roleInteraction.values,
+      role_ids: roles,
       group_id: group._id,
     });
 
@@ -492,11 +514,11 @@ export class NotificationsCommand extends BaseCommand {
               Groupe : \`${group.name}\`
               Salon : <#${channelInteraction.values[0]}>
               Role(s) : ${
-                roleInteraction.values.length === 1
-                  ? `<@&${roleInteraction.values[0]}>`
-                  : `\n${roleInteraction.values
-                      .map((id) => `<@&${id}>`)
-                      .join("\n")}`
+                roles.length
+                  ? roles.length === 1
+                    ? `<@&${roles[0]}>`
+                    : `\n${roles.map((id) => `<@&${id}>`).join("\n")}`
+                  : "-"
               }
             `,
             },
@@ -589,7 +611,7 @@ export class NotificationsCommand extends BaseCommand {
     }
 
     const channels = await interaction.guild?.channels.fetch();
-    const roles = await interaction.guild?.roles.fetch();
+    const guildRolds = await interaction.guild?.roles.fetch();
 
     const notificationSelect = new StringSelectMenuBuilder({
       customId: `${this.nonce}-notification-edit-notification-select`,
@@ -598,9 +620,9 @@ export class NotificationsCommand extends BaseCommand {
         label: channels?.get(notification.channel_id)?.name || "Salon inconnu",
         description: `Role(s):\n ${
           notification.role_ids.length === 1
-            ? `${roles?.get(notification.role_ids[0])?.name}`
+            ? `${guildRolds?.get(notification.role_ids[0])?.name}`
             : `${notification.role_ids
-                .map((id) => roles?.get(id)?.name)
+                .map((id) => guildRolds?.get(id)?.name)
                 .join(", ")}`
         }`,
         value: notification._id.toString(),
@@ -678,23 +700,44 @@ export class NotificationsCommand extends BaseCommand {
     const roleMessage = await channelInteraction.update({
       components: [
         new ActionRowBuilder<RoleSelectMenuBuilder>().addComponents(roleSelect),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder({
+            customId: `${this.nonce}-notification-edit-role-none`,
+            label: "Ne pas mentionner de rôle",
+            style: ButtonStyle.Secondary,
+            emoji: "🙅‍♂️",
+          })
+        ),
       ],
     });
 
-    const roleInteraction = await roleMessage.awaitMessageComponent({
-      filter: (i) =>
-        i.user.id === interaction.user.id &&
-        i.customId === `${this.nonce}-notification-edit-role-select`,
-      componentType: ComponentType.RoleSelect,
-      time: 60_000,
-    });
+    const roleInteraction = await Promise.race([
+      roleMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-notification-edit-role-select`,
+        componentType: ComponentType.RoleSelect,
+        time: 60_000,
+      }),
+      roleMessage.awaitMessageComponent({
+        filter: (i) =>
+          i.user.id === interaction.user.id &&
+          i.customId === `${this.nonce}-notification-edit-role-none`,
+        componentType: ComponentType.Button,
+        time: 60_000,
+      }),
+    ]);
 
     this.interaction = roleInteraction;
+
+    const roles = roleInteraction.isRoleSelectMenu()
+      ? roleInteraction.values
+      : [];
 
     await db.update(notifications).set({
       ...notification,
       channel_id: channelInteraction.values[0],
-      role_ids: roleInteraction.values,
+      role_ids: roles,
     });
 
     await Promise.all([
@@ -710,11 +753,11 @@ export class NotificationsCommand extends BaseCommand {
               Groupe : \`${group.name}\`
               Salon : <#${channelInteraction.values[0]}>
               Role(s) : ${
-                roleInteraction.values.length === 1
-                  ? `<@&${roleInteraction.values[0]}>`
-                  : `\n${roleInteraction.values
-                      .map((id) => `<@&${id}>`)
-                      .join("\n")}`
+                roles.length
+                  ? roles.length === 1
+                    ? `<@&${roles[0]}>`
+                    : `\n${roles.map((id) => `<@&${id}>`).join("\n")}`
+                  : "-"
               }
             `,
             },
@@ -880,10 +923,10 @@ export class NotificationsCommand extends BaseCommand {
 
     return (
       handler.devUserIds.includes(user.id) ||
-      this.permission.user_ids.includes(user.id) ||
       handler.devRoleIds.some((id) => user?.roles.cache.has(id)) ||
-      this.permission.role_ids.some((id) => user?.roles.cache.has(id)) ||
-      user?.permissions.has(PermissionFlagsBits.Administrator)
+      user?.permissions.has(PermissionFlagsBits.Administrator) ||
+      this.permission.user_ids.includes(user.id) ||
+      this.permission.role_ids.some((id) => user?.roles.cache.has(id))
     );
   }
 

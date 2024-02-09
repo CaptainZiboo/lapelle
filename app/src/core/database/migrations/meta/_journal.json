@@ -57,6 +57,13 @@
       "when": 1707409043388,
       "tag": "0007_blushing_morlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1707507343609,
+      "tag": "0008_parallel_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

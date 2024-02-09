@@ -24,7 +24,7 @@ import {
   MissingCredentials,
 } from "../utils/errors";
 import { db } from "../database";
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { users, usersToGroups } from "../database/entities";
 
 export class GroupsCommand extends BaseCommand {
@@ -105,6 +105,14 @@ export class GroupsCommand extends BaseCommand {
         },
       ]);
     }
+
+    reply.embeds[0].addFields([
+      {
+        name: "Pourquoi des groupes ?",
+        value:
+          "Les groupes correspondent aux groupes étudiants que vous pourrez retrouver sur votre [fiche étudiant](https://www.leonard-de-vinci.net/?my=fiche), sur le portail de l'école. Ils permettent de vous associer à vos différents cours.",
+      },
+    ]);
 
     if (interaction.replied) {
       await interaction.editReply(reply);
@@ -194,8 +202,8 @@ export class GroupsCommand extends BaseCommand {
     const input = new TextInputBuilder({
       customId: "name",
       label: "Nom du groupe",
-      placeholder: "ECOLE-FORMATION-ANNEE-GROUPE",
-      style: TextInputStyle.Short,
+      placeholder: "GROUPE1, GROUPE2...",
+      style: TextInputStyle.Paragraph,
       required: true,
     });
 
@@ -216,29 +224,49 @@ export class GroupsCommand extends BaseCommand {
 
     this.interaction = ModalSubmitInteraction;
 
-    const name = ModalSubmitInteraction.fields.getTextInputValue("name");
+    const names = ModalSubmitInteraction.fields
+      .getTextInputValue("name")
+      .split(/,|\s|\n/);
 
-    let group = await db.query.groups.findFirst({
-      where: eq(groups.name, name),
-    });
+    const userAddedGroups = await db
+      .insert(groups)
+      .values(names.map((name) => ({ name })))
+      .onConflictDoUpdate({
+        target: [groups.name],
+        set: {
+          name: sql`excluded.name`,
+        },
+      })
+      .returning();
 
-    if (!group) {
-      const result = await db.insert(groups).values({ name }).returning();
-      group = result[0];
-    }
+    console.log(userAddedGroups);
 
     await db
       .insert(usersToGroups)
-      .values({ user_id: this.user._id, group_id: group._id, verified: false })
+      .values(
+        userAddedGroups.map((group) => ({
+          user_id: this.user._id,
+          group_id: group._id,
+          verified: true,
+        }))
+      )
+      .onConflictDoNothing()
       .execute();
 
     await Promise.all([
       ModalSubmitInteraction.reply({
         embeds: [
           SimpleEmbed({
-            content: `Vous avez rejoint le groupe \`${group.name}\`.`,
+            content: `Vous avez rejoint les ${userAddedGroups.length} nouveau(x) groupe(s) !`,
             emoji: "✅",
-          }),
+          }).addFields([
+            {
+              name: "Vous avez rejoint les groupes suivants :",
+              value: `\`\`\`\n${userAddedGroups
+                .map((group) => group.name)
+                .join("\n")}\`\`\``,
+            },
+          ]),
         ],
         components: [],
         ephemeral: true,
