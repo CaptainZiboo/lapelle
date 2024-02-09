@@ -25,10 +25,10 @@ export const getTodayEmbed = (courses: Course[]) => {
         .map((c) => {
           return `🧪${whitespace}${c.subject}\n👥${whitespace}${
             c.teachers
-          }\n🕔${whitespace}${c.time.beginning.toLocaleTimeString([], {
+          }\n🕔${whitespace}${c.time.beginning.toLocaleTimeString("fr-FR", {
             hour: "2-digit",
             minute: "2-digit",
-          })} - ${c.time.end.toLocaleTimeString([], {
+          })} - ${c.time.end.toLocaleTimeString("fr-FR", {
             hour: "2-digit",
             minute: "2-digit",
           })}\n🚪${whitespace}${c.rooms} - ${c.campus} ${
