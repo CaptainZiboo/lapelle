@@ -1,9 +1,7 @@
 import type { Config } from "drizzle-kit";
 import { config as env } from "dotenv";
 
-env({
-  path: "../.env",
-});
+env();
 
 const { POSTGRES_URL } = process.env;
 
