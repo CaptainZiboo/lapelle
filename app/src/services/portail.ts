@@ -280,7 +280,7 @@ export class Portail extends Scraper {
     await el.click();
 
     // Attendez que la fenêtre modale soit ouverte
-    const modal = await this.page?.$("#b-calendar-1-event-tip");
+    const modal = await this.get("#b-calendar-1-event-tip");
 
     if (!modal) {
       throw new Error("La fenêtre modale n'a pas pu être trouvée.");
@@ -319,7 +319,6 @@ export class Portail extends Scraper {
     await modal.$eval("button[data-ref='close']", (button) => button.click());
 
     // General data about the course
-
     const _id = await el.evaluate(
       (el) => el.getAttribute("data-event-id") || ""
     );
@@ -457,7 +456,14 @@ export class Portail extends Scraper {
     // Sélectionner tous les cours pour le jour donné
     const courses = await days[index].$$(".b-cal-event-wrap");
 
-    return Promise.all(courses.map((course) => this.getCourseData(course)));
+    const data = [];
+
+    for (const course of courses) {
+      const c = await this.getCourseData(course);
+      data.push(c);
+    }
+
+    return data;
   }
 
   async getGroups(): Promise<string[] | undefined> {

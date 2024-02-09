@@ -44,16 +44,7 @@ export class Devinci {
       if (!list) continue;
       merged = [
         ...merged,
-        ...list.filter(
-          (course) =>
-            !merged.some(
-              (c) =>
-                c.subject === course.subject &&
-                c.time.beginning.getTime() ===
-                  course.time.beginning.getTime() &&
-                c.time.end.getTime() === course.time.end.getTime()
-            )
-        ),
+        ...list.filter((course) => !merged.some((c) => c._id === course._id)),
       ];
     }
 
@@ -98,14 +89,7 @@ export class Devinci {
           courses: [
             ...day.courses,
             ...week.days[i].courses.filter(
-              (course) =>
-                !day.courses.some(
-                  (c) =>
-                    c.subject === course.subject &&
-                    c.time.beginning.getTime() ===
-                      course.time.beginning.getTime() &&
-                    c.time.end.getTime() === course.time.end.getTime()
-                )
+              (course) => !day.courses.some((c) => c._id === course._id)
             ),
           ].sort(
             (a, b) => a.time.beginning.getTime() - b.time.beginning.getTime()
@@ -528,6 +512,15 @@ export class Devinci {
       throw new NoCurrentCourse();
     }
 
+    const cached = cache.presences.get<PresenceStatus>(current._id);
+
+    if (cached) {
+      return {
+        data: cached,
+        meta,
+      };
+    }
+
     const group = await db.query.groups.findFirst({
       where: and(
         eq(groups.verified, true),
@@ -545,15 +538,6 @@ export class Devinci {
 
     if (!group) {
       throw new NoGroupFound();
-    }
-
-    const cached = cache.presences.get<PresenceStatus>(current._id);
-
-    if (cached) {
-      return {
-        data: cached,
-        meta,
-      };
     }
 
     // If no user in group, return unprocessed groups

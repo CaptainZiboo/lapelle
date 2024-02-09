@@ -6,6 +6,7 @@ import { InteractionResponse, RepliableInteraction } from "discord.js";
 import { SimpleEmbed } from "../utils/embeds";
 import { PresenceStatus } from "../../services/portail";
 import { getEmptyTodayEmbed } from "./today.command";
+import { join } from "path";
 
 export const getPresenceEmbed = (presence: PresenceStatus) => {
   switch (presence.status) {
@@ -15,6 +16,7 @@ export const getPresenceEmbed = (presence: PresenceStatus) => {
         content: "L'appel est ouvert !",
         emoji: "✅",
       }).setURL(presence.url);
+
     case "closed":
       return SimpleEmbed({
         title: "Relevé de présence",
@@ -59,6 +61,7 @@ export class PresenceCommand extends BaseCommand {
     if (presence) {
       await interaction.editReply({
         embeds: [getPresenceEmbed(presence)],
+        files: [join(__dirname, "../../../assets/shovel.png")],
       });
     }
 
