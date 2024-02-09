@@ -17,14 +17,10 @@ import {
 import { CommandReplies } from "../utils/replies";
 import { Portail } from "../../services/portail";
 import { NoGroupToImport, NotImplemented } from "../utils/errors";
-import { Group, groups } from "../database/entities/groups";
+import { groups } from "../database/entities/groups";
 import { db } from "../database";
-import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
-import {
-  users,
-  usersToGroups,
-  usersToGroupsRelations,
-} from "../database/entities";
+import { and, eq, notInArray } from "drizzle-orm";
+import { users, usersToGroups } from "../database/entities";
 import { sign } from "../utils/jwt";
 import { whitespace } from "../utils/text";
 
@@ -46,7 +42,7 @@ export class CredentialsCommand extends BaseCommand {
 
     // Create Code link
     const codeLink = new ButtonBuilder({
-      url: "https://github.com/CaptainZiboo",
+      url: "https://github.com/CaptainZiboo/lapelle",
       label: "Code",
       style: ButtonStyle.Link,
     });
@@ -72,6 +68,15 @@ export class CredentialsCommand extends BaseCommand {
             value: this.user.credentials
               ? `✅${whitespace}Vous êtes connecté au portail Devinci`
               : `❌${whitespace}Vous n'êtes pas connecté au portail Devinci`,
+          },
+          {
+            name: "Pourquoi se connecter ?",
+            value:
+              "Se connecter vous permet de débloquer certaines fonctionnalités en relation avec le portail Léonard de Vinci.",
+          },
+          {
+            name: "Informations sensibles :",
+            value: `📑${whitespace}Le code du bot est entièrement open-source pour des questions de transparence, vous pouvez ainsi vérifier que vos identifiants ne sont pas transmis à des tiers ou utilisés à des fins malveillantes.\n[Voir Lapelle Devinci sur Github](https://github.com/CaptainZiboo/lapelle)`,
           },
         ]),
       ],
