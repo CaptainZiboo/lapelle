@@ -16,17 +16,17 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Définition du répertoire de travail
 WORKDIR /usr/src/app
 
+# Installation de l'utilitaire corepack
+RUN corepack enable
+
 # Copie des fichiers package.json et package-lock.json pour installer les dépendances
 COPY package*.json ./
 
 # Installation des dépendances
-RUN npm install
+RUN pnpm install
 
 # Copie des fichiers source dans l'image
 COPY . .
 
 # Compilation TypeScript
-RUN npm run build
-
-# Commande par défaut pour démarrer l'application
-CMD ["npm", "run", "start"]
+RUN pnpm build
