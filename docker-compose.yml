@@ -17,9 +17,7 @@ services:
       retries: 3
 
   app:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    image: captainziboo/lapelle:latest
     command: sh -c "pnpm migrate && pnpm start"
     env_file:
       - .env
