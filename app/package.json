@@ -1,0 +1,50 @@
+{
+  "name": "lapelle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch ./src/index.ts",
+    "portail": "tsx ./src/services/portail.test.ts",
+    "start": "commandkit start",
+    "build": "tsc",
+    "migration:generate": "drizzle-kit generate:pg",
+    "migration:push": "tsx ./src/core/database/migrate.ts",
+    "migrate": "pnpm run migration:generate && pnpm run migration:push"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/luxon": "^3.4.2",
+    "@types/node": "^20.11.16",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.0",
+    "@types/validator": "^13.11.9",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@isaacs/ttlcache": "^1.4.1",
+    "chalk": "^5.3.0",
+    "commandkit": "^0.1.10",
+    "cron": "^3.1.6",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.1",
+    "drizzle-kit": "^0.20.14",
+    "drizzle-orm": "^0.29.3",
+    "jsonwebtoken": "^9.0.2",
+    "luxon": "^3.4.4",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "puppeteer": "^21.11.0",
+    "radash": "^11.0.0",
+    "reflect-metadata": "^0.1.14",
+    "rxjs": "^7.8.1",
+    "sequelize": "^6.36.0",
+    "sequelize-typescript": "^2.1.6",
+    "winston": "^3.11.0"
+  }
+}

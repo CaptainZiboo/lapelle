@@ -1,0 +1,1 @@
+ALTER TABLE "notifications" ALTER COLUMN "role_ids" SET NOT NULL;

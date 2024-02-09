@@ -1,0 +1,62 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1707324956701,
+      "tag": "0000_rainy_next_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1707325285252,
+      "tag": "0001_lean_the_executioner",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1707339378149,
+      "tag": "0002_faithful_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1707385787623,
+      "tag": "0003_loving_ben_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1707408887169,
+      "tag": "0004_dry_molly_hayes",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1707408961648,
+      "tag": "0005_groovy_typhoid_mary",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1707409016070,
+      "tag": "0006_special_omega_sentinel",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1707409043388,
+      "tag": "0007_blushing_morlocks",
+      "breakpoints": true
+    }
+  ]
+}
