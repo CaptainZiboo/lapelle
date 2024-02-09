@@ -18,7 +18,7 @@ services:
 
   app:
     image: captainziboo/lapelle:latest
-    command: sh -c "pnpm migrate && pnpm start"
+    command: pnpm deploy
     env_file:
       - .env
     depends_on:
