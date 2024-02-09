@@ -13,13 +13,13 @@ import {
   getUnsyncedGroupsEmbed,
   getWeekEmbed,
 } from "./core/commands/week.command";
-import { get } from "http";
 import {
   getEmptyTodayEmbed,
   getTodayEmbed,
 } from "./core/commands/today.command";
 import { getPresenceEmbed } from "./core/commands/presence.command";
 import cache from "./core/utils/cache";
+import { logger } from "./core/utils/logger";
 
 dotenv.config();
 
@@ -41,92 +41,127 @@ async function start() {
   await db_client.connect();
   client.login(process.env.DISCORD_TOKEN);
 
-  const presence = new CronJob("*/2 * * * *", async () => {
-    const presence_users = await db.query.users.findMany({
-      where: arrayContains(users.notifications, ["presence"]),
-      with: {
-        groups: {
-          with: {
-            group: true,
+  const presence = new CronJob(
+    "*/2 * * * *",
+    async () => {
+      const time = Date.now();
+      let users_count = 0;
+      let notifications_count = 0;
+      logger.info("Sending presence notifications...");
+      const presence_users = await db.query.users.findMany({
+        where: arrayContains(users.notifications, ["presence"]),
+        with: {
+          groups: {
+            with: {
+              group: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    for (const user of presence_users) {
-      if (user.groups.length > 0) {
-        const cached = cache.notifications.get<number>(`${user._id}-presence`);
+      for (const user of presence_users) {
+        if (user.groups.length > 0) {
+          const cached = cache.notifications.get<number>(
+            `${user._id}-presence`
+          );
+
+          if (cached && Date.now() < cached) {
+            continue;
+          }
+
+          const { data: presence, meta } = await devinci.getGroupsPresence(
+            user.groups.map(({ group }) => group.name)
+          );
+
+          if (!presence || presence.status !== "open") continue;
+
+          const discord_user = await client.users.fetch(user.discord_id);
+          await discord_user.send({
+            embeds: [getPresenceEmbed(presence)],
+          });
+
+          users_count++;
+
+          cache.notifications.set(
+            `${user._id}-presence`,
+            presence?.time.end.getTime()
+          );
+        }
+      }
+
+      const presence_notifications = await db.query.notifications.findMany({
+        with: {
+          group: true,
+        },
+      });
+
+      for (const notification of presence_notifications) {
+        const cached = cache.notifications.get<number>(
+          `${notification._id}-presence`
+        );
 
         if (cached && Date.now() < cached) {
           continue;
         }
 
-        const { data: presence, meta } = await devinci.getGroupsPresence(
-          user.groups.map(({ group }) => group.name)
-        );
+        const { data: presence, meta } = await devinci.getGroupsPresence([
+          notification.group.name,
+        ]);
 
         if (!presence || presence.status !== "open") continue;
 
-        const discord_user = await client.users.fetch(user.discord_id);
-        await discord_user.send({
+        const guild = client.guilds.cache.get(notification.guild_id);
+        if (!guild) {
+          logger.error(`Guild ${notification.guild_id} not found`);
+        }
+        const channel = guild?.channels.cache.get(notification.channel_id);
+        if (!channel) {
+          logger.error(`Channel ${notification.channel_id} not found`);
+        }
+        const roles = guild?.roles.cache.filter((role) =>
+          notification.role_ids.includes(role.id)
+        );
+        if (!roles) {
+          logger.error(`Roles ${notification.role_ids} not found`);
+        }
+
+        if (!channel || !channel.isTextBased()) {
+          await db
+            .delete(notifications)
+            .where(eq(notifications._id, notification._id))
+            .execute();
+          continue;
+        }
+
+        await channel.send({
+          content: roles?.map((role) => `<@&${role.id}>`).join(""),
           embeds: [getPresenceEmbed(presence)],
         });
 
+        notifications_count++;
+
         cache.notifications.set(
-          `${user._id}-presence`,
+          `${notification._id}-presence`,
           presence?.time.end.getTime()
         );
       }
-    }
 
-    const presence_notifications = await db.query.notifications.findMany({
-      with: {
-        group: true,
-      },
-    });
-
-    for (const notification of presence_notifications) {
-      const cached = cache.notifications.get<number>(
-        `${notification.group._id}-presence`
-      );
-
-      if (cached && Date.now() < cached) {
-        continue;
+      if (users_count > 0 || notifications_count > 0) {
+        logger.info(`Sent ${users_count} presence notifications to users`);
+        logger.info(
+          `Sent ${notifications_count} presence notifications to channels`
+        );
+        logger.info(`Presence notifications took ${Date.now() - time}ms`);
+      } else {
+        logger.info("No presence notifications sent");
       }
-
-      const { data: presence, meta } = await devinci.getGroupsPresence([
-        notification.group.name,
-      ]);
-
-      if (!presence || presence.status !== "open") continue;
-
-      const guild = client.guilds.cache.get(notification.guild_id);
-      const channel = guild?.channels.cache.get(notification.channel_id);
-      const roles = guild?.roles.cache.filter((role) =>
-        notification.role_ids.includes(role.id)
-      );
-
-      if (!channel || !channel.isTextBased()) {
-        await db
-          .delete(notifications)
-          .where(eq(notifications._id, notification._id))
-          .execute();
-        continue;
-      }
-
-      channel.send({
-        content: roles?.map((role) => `<@&${role.id}>`).join(""),
-        embeds: [getPresenceEmbed(presence)],
-      });
-
-      cache.notifications.set(
-        `${notification.group._id}-presence`,
-        presence?.time.end.getTime()
-      );
-    }
-  });
-
-  // presence.start();
+    },
+    null,
+    true,
+    null,
+    null,
+    true
+  );
 
   const today = new CronJob("0 7 * * *", async () => {
     const today_users = await db.query.users.findMany({
@@ -160,7 +195,7 @@ async function start() {
     }
   });
 
-  // today.start();
+  today.start();
 
   const week = new CronJob("0 19 * * 1", async () => {
     const week_users = await db.query.users.findMany({
@@ -194,7 +229,7 @@ async function start() {
     }
   });
 
-  // week.start();
+  week.start();
 }
 
 start();

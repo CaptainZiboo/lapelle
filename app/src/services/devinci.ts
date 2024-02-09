@@ -10,6 +10,7 @@ import { db } from "../core/database";
 import { and, eq, inArray } from "drizzle-orm";
 import { User, users, usersToGroups } from "../core/database/entities";
 import cache from "../core/utils/cache";
+import { logger } from "../core/utils/logger";
 
 interface _Meta {
   unprocessed?: string[];
@@ -665,7 +666,7 @@ export class Devinci {
       throw new NoCurrentCourse();
     }
 
-    const group = await db.query.groups.findFirst({
+    const currentCourseGroups = await db.query.groups.findMany({
       where: and(
         eq(groups.verified, true),
         inArray(groups.name, current.groups)
@@ -680,7 +681,7 @@ export class Devinci {
       },
     });
 
-    if (!group) {
+    if (!currentCourseGroups.length) {
       throw new NoGroupFound();
     }
 
@@ -693,34 +694,39 @@ export class Devinci {
       };
     }
 
-    // If no user in group, return unprocessed groups
-    if (!group?.users.length) {
-      return {
-        data: undefined,
-        meta: {
-          unprocessed: [...(meta?.unprocessed || []), ...current.groups],
-        },
-      };
-    }
+    const processed = new Set<string>();
 
-    // If user is in group, get presence
-    for (const { user } of group.users) {
-      const portail = new Portail(user);
-      const presence = await portail.use<PresenceStatus>((p) =>
-        p.getPresence(current)
-      );
+    for (const group of currentCourseGroups) {
+      // If no user in group, return unprocessed groups
+      if (!group?.users.length) continue;
 
-      presence && cache.presences.set(current._id, presence);
+      // If user is in group, get presence
+      for (const { user } of group.users) {
+        const portail = new Portail(user);
+        const presence = await portail.use<PresenceStatus>((p) =>
+          p.getPresence(current)
+        );
 
-      return {
-        data: presence,
-        meta,
-      };
+        logger.info("presence ->", presence);
+
+        processed.add(group.name);
+
+        presence && cache.presences.set(current._id, presence);
+
+        return {
+          data: presence,
+          meta,
+        };
+      }
     }
 
     return {
       data: undefined,
-      meta,
+      meta: {
+        unprocessed: meta?.unprocessed?.filter(
+          (group) => !processed.has(group)
+        ),
+      },
     };
   }
 }
