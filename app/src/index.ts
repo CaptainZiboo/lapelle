@@ -20,6 +20,7 @@ import {
 import { getPresenceEmbed } from "./core/commands/presence.command";
 import cache from "./core/utils/cache";
 import { logger } from "./core/utils/logger";
+import { DiscordError } from "./core/utils/errors";
 
 dotenv.config();
 
@@ -58,30 +59,39 @@ async function start() {
     });
 
     for (const user of presence_users) {
-      if (user.groups.length > 0) {
-        const cached = cache.notifications.get<number>(`${user._id}-presence`);
+      try {
+        if (user.groups.length > 0) {
+          const cached = cache.notifications.get<number>(
+            `${user._id}-presence`
+          );
 
-        if (cached && Date.now() < cached) {
-          continue;
+          if (cached && Date.now() < cached) {
+            continue;
+          }
+
+          const { data: presence, meta } = await devinci.getGroupsPresence(
+            user.groups.map(({ group }) => group.name)
+          );
+
+          if (!presence || presence.status !== "open") continue;
+
+          const discord_user = await client.users.fetch(user.discord_id);
+          await discord_user.send({
+            embeds: [getPresenceEmbed(presence)],
+          });
+
+          users_count++;
+
+          cache.notifications.set(
+            `${user._id}-presence`,
+            presence?.time.end.getTime()
+          );
         }
-
-        const { data: presence, meta } = await devinci.getGroupsPresence(
-          user.groups.map(({ group }) => group.name)
-        );
-
-        if (!presence || presence.status !== "open") continue;
-
-        const discord_user = await client.users.fetch(user.discord_id);
-        await discord_user.send({
-          embeds: [getPresenceEmbed(presence)],
-        });
-
-        users_count++;
-
-        cache.notifications.set(
-          `${user._id}-presence`,
-          presence?.time.end.getTime()
-        );
+      } catch (error) {
+        if (!(error instanceof DiscordError)) {
+          logger.error(error);
+        }
+        continue;
       }
     }
 
@@ -92,54 +102,61 @@ async function start() {
     });
 
     for (const notification of presence_notifications) {
-      const cached = cache.notifications.get<number>(
-        `${notification._id}-presence`
-      );
+      try {
+        const cached = cache.notifications.get<number>(
+          `${notification._id}-presence`
+        );
 
-      if (cached && Date.now() < cached) {
+        if (cached && Date.now() < cached) {
+          continue;
+        }
+
+        const { data: presence, meta } = await devinci.getGroupsPresence([
+          notification.group.name,
+        ]);
+
+        if (!presence || presence.status !== "open") continue;
+
+        const guild = client.guilds.cache.get(notification.guild_id);
+        if (!guild) {
+          logger.error(`Guild ${notification.guild_id} not found`);
+        }
+        const channel = guild?.channels.cache.get(notification.channel_id);
+        if (!channel) {
+          logger.error(`Channel ${notification.channel_id} not found`);
+        }
+        const roles = guild?.roles.cache.filter((role) =>
+          notification.role_ids.includes(role.id)
+        );
+        if (!roles) {
+          logger.error(`Roles ${notification.role_ids} not found`);
+        }
+
+        if (!channel || !channel.isTextBased()) {
+          await db
+            .delete(notifications)
+            .where(eq(notifications._id, notification._id))
+            .execute();
+          continue;
+        }
+
+        await channel.send({
+          content: roles?.map((role) => `<@&${role.id}>`).join(""),
+          embeds: [getPresenceEmbed(presence)],
+        });
+
+        notifications_count++;
+
+        cache.notifications.set(
+          `${notification._id}-presence`,
+          presence?.time.end.getTime()
+        );
+      } catch (error) {
+        if (!(error instanceof DiscordError)) {
+          logger.error(error);
+        }
         continue;
       }
-
-      const { data: presence, meta } = await devinci.getGroupsPresence([
-        notification.group.name,
-      ]);
-
-      if (!presence || presence.status !== "open") continue;
-
-      const guild = client.guilds.cache.get(notification.guild_id);
-      if (!guild) {
-        logger.error(`Guild ${notification.guild_id} not found`);
-      }
-      const channel = guild?.channels.cache.get(notification.channel_id);
-      if (!channel) {
-        logger.error(`Channel ${notification.channel_id} not found`);
-      }
-      const roles = guild?.roles.cache.filter((role) =>
-        notification.role_ids.includes(role.id)
-      );
-      if (!roles) {
-        logger.error(`Roles ${notification.role_ids} not found`);
-      }
-
-      if (!channel || !channel.isTextBased()) {
-        await db
-          .delete(notifications)
-          .where(eq(notifications._id, notification._id))
-          .execute();
-        continue;
-      }
-
-      await channel.send({
-        content: roles?.map((role) => `<@&${role.id}>`).join(""),
-        embeds: [getPresenceEmbed(presence)],
-      });
-
-      notifications_count++;
-
-      cache.notifications.set(
-        `${notification._id}-presence`,
-        presence?.time.end.getTime()
-      );
     }
 
     if (users_count > 0 || notifications_count > 0) {
@@ -168,21 +185,28 @@ async function start() {
     });
 
     for (const user of today_users) {
-      if (user.groups.length > 0) {
-        const { data: courses, meta } = await devinci.getGroupsTodayCourses(
-          user.groups.map(({ group }) => group.name)
-        );
+      try {
+        if (user.groups.length > 0) {
+          const { data: courses, meta } = await devinci.getGroupsTodayCourses(
+            user.groups.map(({ group }) => group.name)
+          );
 
-        const discord_user = await client.users.fetch(user.discord_id);
-        await discord_user.send({
-          embeds: [courses ? getTodayEmbed(courses) : getEmptyTodayEmbed()],
-        });
-
-        if (meta?.unprocessed?.length) {
+          const discord_user = await client.users.fetch(user.discord_id);
           await discord_user.send({
-            embeds: [getUnsyncedGroupsEmbed(meta.unprocessed)],
+            embeds: [courses ? getTodayEmbed(courses) : getEmptyTodayEmbed()],
           });
+
+          if (meta?.unprocessed?.length) {
+            await discord_user.send({
+              embeds: [getUnsyncedGroupsEmbed(meta.unprocessed)],
+            });
+          }
         }
+      } catch (error) {
+        if (!(error instanceof DiscordError)) {
+          logger.error(error);
+        }
+        continue;
       }
     }
   });
@@ -202,21 +226,28 @@ async function start() {
     });
 
     for (const user of week_users) {
-      if (user.groups.length > 0) {
-        const { data: week, meta } = await devinci.getGroupsWeekCourses(
-          user.groups.map(({ group }) => group.name)
-        );
+      try {
+        if (user.groups.length > 0) {
+          const { data: week, meta } = await devinci.getGroupsWeekCourses(
+            user.groups.map(({ group }) => group.name)
+          );
 
-        const discord_user = await client.users.fetch(user.discord_id);
-        await discord_user.send({
-          embeds: [week ? getWeekEmbed(week) : getEmptyWeekEmbed()],
-        });
-
-        if (meta?.unprocessed?.length) {
+          const discord_user = await client.users.fetch(user.discord_id);
           await discord_user.send({
-            embeds: [getUnsyncedGroupsEmbed(meta.unprocessed)],
+            embeds: [week ? getWeekEmbed(week) : getEmptyWeekEmbed()],
           });
+
+          if (meta?.unprocessed?.length) {
+            await discord_user.send({
+              embeds: [getUnsyncedGroupsEmbed(meta.unprocessed)],
+            });
+          }
         }
+      } catch (error) {
+        if (!(error instanceof DiscordError)) {
+          logger.error(error);
+        }
+        continue;
       }
     }
   });
