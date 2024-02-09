@@ -12,7 +12,5 @@ export const verify = (
 
   const test = jwt.verify(token, process.env.CREDENTIALS_SECRET!);
 
-  console.log(test);
-
   return test as PortailCredentials;
 };

@@ -1,5 +1,6 @@
 import puppeteer, { ElementHandle, Page } from "puppeteer";
 import { Browser, browser } from "./browser";
+import { logger } from "../core/utils/logger";
 
 export interface ParserGetOptions {
   parent?: ElementHandle;
@@ -127,7 +128,7 @@ export class Scraper {
             value
           );
         } else {
-          console.warn(`Le sélecteur ${selector} n'a pas été trouvé.`);
+          logger.warn(`Le sélecteur ${selector} n'a pas été trouvé.`);
         }
       },
     });
@@ -166,7 +167,6 @@ export class Scraper {
         const location = this.page.url();
         const redirected = await options.validate(location);
         if (!redirected) {
-          console.log("Impossible de valider l'URL: ", location);
           throw new Error(`Impossible de valider l'URL: ${location}`);
         }
       }

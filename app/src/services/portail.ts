@@ -88,8 +88,6 @@ export class Portail extends Scraper {
       return;
     }
 
-    console.log("Initialisation du portail");
-
     await this.navigate({
       url: "https://www.leonard-de-vinci.net/",
       timeout: 10000,
@@ -103,7 +101,6 @@ export class Portail extends Scraper {
       try {
         if (!this.loggedIn) {
           await this.initialize();
-          console.log("Portal initialized");
           await this.login();
         }
         const value = await callback?.(this);
@@ -210,10 +207,6 @@ export class Portail extends Scraper {
     await this.navigate({ url: current.url, timeout: 10000 });
 
     const element = await this.get("#body_presence");
-
-    console.log(element?.toString());
-
-    console.log("Getting status");
 
     if (!element) {
       return;
@@ -498,7 +491,7 @@ export class Portail extends Scraper {
 
       return list;
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   }
 

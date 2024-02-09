@@ -99,8 +99,6 @@ export class CredentialsCommand extends BaseCommand {
   async run({ interaction, client, handler }: SlashCommandProps) {
     const { codeLink } = this.getButtons();
 
-    console.log("user", this.user);
-
     // Send message with buttons
     const actionMessage = await this.show(interaction);
 
@@ -362,7 +360,6 @@ export class CredentialsCommand extends BaseCommand {
         )
       )
     ).flat();
-    console.log(portailGroups);
 
     const eraseButton = new ButtonBuilder({
       customId: `${this.nonce}-credentials-login-sync-erase`,

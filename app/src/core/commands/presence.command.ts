@@ -38,8 +38,6 @@ export class PresenceCommand extends BaseCommand {
   }
 
   async run({ interaction, client, handler }: SlashCommandProps) {
-    console.log("Presence command triggered.");
-
     await interaction.reply(
       CommandReplies.Waiting({
         message: "Récupération des cours de la journée...",

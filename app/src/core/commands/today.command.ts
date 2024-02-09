@@ -63,8 +63,6 @@ export class TodayCommand extends BaseCommand {
       this.user
     );
 
-    console.log("meta", meta);
-
     if (courses.length === 0) {
       await interaction.editReply({
         embeds: [getEmptyTodayEmbed()],

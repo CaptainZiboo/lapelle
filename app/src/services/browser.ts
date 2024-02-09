@@ -1,4 +1,5 @@
 import puppeteer, { Browser as PuppeteerBrowser } from "puppeteer";
+import { logger } from "../core/utils/logger";
 
 export class BrowserCallbackOptions {
   error?: Error;
@@ -12,7 +13,7 @@ export class Browser {
 
   async launch() {
     this.instance = await puppeteer.launch({
-      headless: false,
+      headless: "new",
       args: ["--no-sandbox"],
     });
   }
@@ -24,7 +25,6 @@ export class Browser {
         await this.launch();
         this.closing = false;
       } catch (error) {
-        console.log("Browser error:", error);
         throw new Error("Could not launch browser!");
       }
     }

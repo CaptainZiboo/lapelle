@@ -438,8 +438,6 @@ export class GroupsCommand extends BaseCommand {
 
     this.interaction = leaveInteraction;
 
-    console.log(leaveInteraction.values);
-
     await db
       .delete(usersToGroups)
       .where(
