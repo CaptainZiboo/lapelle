@@ -239,8 +239,6 @@ export class GroupsCommand extends BaseCommand {
       })
       .returning();
 
-    console.log(userAddedGroups);
-
     await db
       .insert(usersToGroups)
       .values(
