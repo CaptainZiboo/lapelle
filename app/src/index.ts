@@ -5,10 +5,9 @@ import { CommandKit } from "commandkit";
 import dotenv from "dotenv";
 import { join } from "path";
 import { CronJob } from "cron";
-import { arrayContains, arrayOverlaps, eq, inArray } from "drizzle-orm";
+import { arrayContains, arrayOverlaps, eq } from "drizzle-orm";
 import { notifications, users } from "./core/database/entities";
 import { devinci } from "./services/devinci";
-import { SimpleEmbed } from "./core/utils/embeds";
 import {
   getEmptyWeekEmbed,
   getUnsyncedGroupsEmbed,
@@ -32,7 +31,6 @@ new CommandKit({
   client,
   commandsPath: join(__dirname, "discord/commands"),
   eventsPath: join(__dirname, "discord/events"),
-  validationsPath: join(__dirname, "discord/validations"),
   devGuildIds: ["856443440371204116"],
   devUserIds: ["461334921915400192", "656050503171571723"],
   skipBuiltInValidations: true,
