@@ -691,8 +691,6 @@ export class Devinci {
           p.getPresence(current)
         );
 
-        logger.info("presence ->", presence);
-
         processed.add(group.name);
 
         presence && cache.presences.set(current._id, presence);

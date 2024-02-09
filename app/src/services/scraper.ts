@@ -128,7 +128,7 @@ export class Scraper {
             value
           );
         } else {
-          logger.warn(`Le sélecteur ${selector} n'a pas été trouvé.`);
+          logger.error(`Le sélecteur ${selector} n'a pas été trouvé.`);
         }
       },
     });
