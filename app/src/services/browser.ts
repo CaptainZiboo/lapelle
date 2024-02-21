@@ -10,11 +10,13 @@ export class Browser {
   private queue: ((options?: BrowserCallbackOptions) => Promise<any>)[] = [];
   private processing: boolean = false;
   private closing: boolean = false;
+  private retries: number = 0;
 
   async launch() {
     this.instance = await puppeteer.launch({
       headless: "new",
       args: ["--no-sandbox"],
+      protocolTimeout: 0,
     });
   }
 
@@ -24,7 +26,9 @@ export class Browser {
       try {
         await this.launch();
         this.closing = false;
-      } catch (error) {
+      } catch (error: any) {
+        logger.error("Error from browser.use");
+        logger.error(error.stack);
         throw new Error("Could not launch browser!");
       }
     }
@@ -44,7 +48,6 @@ export class Browser {
         } catch (error) {
           reject(error);
         }
-
         // Add a return statement to fix the problem
       });
 
@@ -56,17 +59,45 @@ export class Browser {
   }
 
   async process() {
-    if (this.queue.length) {
-      this.processing = true;
-      const callback = this.queue.shift();
-      try {
-        await callback?.();
-      } finally {
-        await this.process();
+    try {
+      if (this.queue.length) {
+        this.processing = true;
+        const callback = this.queue.shift();
+        try {
+          await callback?.();
+        } finally {
+          await this.process();
+        }
+      } else {
+        this.processing = false;
+        await this.close();
       }
-    } else {
-      this.processing = false;
-      await this.close();
+      this.retries = 0;
+    } catch (error: any) {
+      logger.error("Error from browser.process");
+      logger.error(error.stack);
+      if (
+        error.message.includes("Network.enable timed out") &&
+        this.retries <= 3
+      ) {
+        this.retries++;
+        logger.error(
+          `Network.enable timed out => Restarting browser (${this.retries})`
+        );
+
+        try {
+          await this.close();
+          await this.launch();
+          await this.process();
+        } catch (error: any) {
+          logger.error("Error from browser.process retry");
+          logger.error(error.stack);
+          throw new Error("Could not process queue...");
+        }
+      } else {
+        this.retries = 0;
+        throw error;
+      }
     }
   }
 

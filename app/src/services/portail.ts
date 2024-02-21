@@ -105,7 +105,9 @@ export class Portail extends Scraper {
         }
         const value = await callback?.(this);
         return value;
-      } catch (error) {
+      } catch (error: any) {
+        logger.error("Error from portail.use");
+        logger.error(error.stack);
         // Throwing error to browser
         throw error;
       } finally {
@@ -168,27 +170,22 @@ export class Portail extends Scraper {
 
   // Méthode principale pour obtenir les informations
   async getPresences(): Promise<Presence[]> {
-    try {
-      if (!this.page) {
-        throw new Error("Page has not initialized.");
-      }
-
-      await this.navigate({
-        url: "https://www.leonard-de-vinci.net/student/presences/",
-      });
-
-      // Getting all day course
-      const presences = await this.getAll("#body_presences tr");
-
-      const courses: Presence[] = await Promise.all(
-        presences.map((presence) => this.getPresenceData(presence))
-      );
-
-      return courses;
-    } catch (error: any) {
-      logger.error(error);
-      throw error;
+    if (!this.page) {
+      throw new Error("Page has not initialized.");
     }
+
+    await this.navigate({
+      url: "https://www.leonard-de-vinci.net/student/presences/",
+    });
+
+    // Getting all day course
+    const presences = await this.getAll("#body_presences tr");
+
+    const courses: Presence[] = await Promise.all(
+      presences.map((presence) => this.getPresenceData(presence))
+    );
+
+    return courses;
   }
 
   async getPresence(course: Course): Promise<PresenceStatus | undefined> {
@@ -361,80 +358,76 @@ export class Portail extends Scraper {
   }
 
   async getWeekCourses(): Promise<Week | undefined> {
-    try {
-      if (!this.page) {
-        throw new Error("Page has not initialized.");
-      }
-
-      // Navigate to the calendar page
-      await this.navigate({
-        url: "https://www.leonard-de-vinci.net/?my=edt",
-        timeout: 10000,
-      });
-
-      await this.find(".b-dayview-day-detail", { timeout: 0 });
-
-      // Récupérer les jours sur l'emploi du temps
-      const days = await this.page.$$(".b-dayview-day-detail");
-
-      // Vérifier si les jours ont été trouvés
-      if (!days || !days.length) {
-        throw new Error("NoDaysFound");
-      }
-
-      // Récupérer la date de début
-      const start = await days[0].evaluate((day) =>
-        day.getAttribute("data-date")
-      );
-
-      // Récupérer la date de fin
-      const end = await days[days.length - 1].evaluate((day) =>
-        day.getAttribute("data-date")
-      );
-
-      // Vérifier si les dates ont été trouvées
-      if (!start || !end) {
-        throw new Error("NoDatesFound");
-      }
-
-      // Initialiser l'objet de la semaine
-      const week: Week = {
-        days: [],
-        meta: {
-          start: new Date(start),
-          end: new Date(end),
-        },
-      };
-
-      for (const day of days) {
-        // Récupérer la date du jour
-        const date = await day.evaluate((day) => day.getAttribute("data-date"));
-
-        if (!date) {
-          throw new Error("NoDateFound");
-        }
-
-        // Sélectionner tous les cours pour le jour donné
-        const courses = await day.$$(".b-cal-event-wrap");
-        const dayCourses: Course[] = [];
-
-        for (const course of courses) {
-          const data = await this.getCourseData(course);
-          dayCourses.push(data);
-        }
-
-        week.days.push({
-          courses: dayCourses,
-          meta: {
-            date: new Date(date),
-          },
-        });
-      }
-
-      return week;
-    } catch (error) {
-      logger.error(error);
+    if (!this.page) {
+      throw new Error("Page has not initialized.");
     }
+
+    // Navigate to the calendar page
+    await this.navigate({
+      url: "https://www.leonard-de-vinci.net/?my=edt",
+      timeout: 10000,
+    });
+
+    await this.find(".b-dayview-day-detail", { timeout: 0 });
+
+    // Récupérer les jours sur l'emploi du temps
+    const days = await this.page.$$(".b-dayview-day-detail");
+
+    // Vérifier si les jours ont été trouvés
+    if (!days || !days.length) {
+      throw new Error("NoDaysFound");
+    }
+
+    // Récupérer la date de début
+    const start = await days[0].evaluate((day) =>
+      day.getAttribute("data-date")
+    );
+
+    // Récupérer la date de fin
+    const end = await days[days.length - 1].evaluate((day) =>
+      day.getAttribute("data-date")
+    );
+
+    // Vérifier si les dates ont été trouvées
+    if (!start || !end) {
+      throw new Error("NoDatesFound");
+    }
+
+    // Initialiser l'objet de la semaine
+    const week: Week = {
+      days: [],
+      meta: {
+        start: new Date(start),
+        end: new Date(end),
+      },
+    };
+
+    for (const day of days) {
+      // Récupérer la date du jour
+      const date = await day.evaluate((day) => day.getAttribute("data-date"));
+
+      if (!date) {
+        throw new Error("NoDateFound");
+      }
+
+      // Sélectionner tous les cours pour le jour donné
+      const courses = await day.$$(".b-cal-event-wrap");
+      const dayCourses: Course[] = [];
+
+      for (const course of courses) {
+        const data = await this.getCourseData(course);
+        dayCourses.push(data);
+      }
+
+      week.days.push({
+        courses: dayCourses,
+        meta: {
+          date: new Date(date),
+        },
+      });
+    }
+
+    return week;
   }
 
   async getTodayCourses(): Promise<Course[]> {
@@ -467,38 +460,34 @@ export class Portail extends Scraper {
   }
 
   async getGroups(): Promise<string[] | undefined> {
-    try {
-      await this.navigate({
-        url: "https://www.leonard-de-vinci.net/?my=fiche",
-        timeout: 10000,
-      });
+    await this.navigate({
+      url: "https://www.leonard-de-vinci.net/?my=fiche",
+      timeout: 10000,
+    });
 
-      if (!this.page) {
-        throw new Error("Page has not initialized.");
-      }
-
-      const panel = await this.page.$(
-        "::-p-xpath(//*[text()='Mes groupes']/parent::*/parent::*)"
-      );
-
-      if (!panel) {
-        throw new Error("Impossible de trouver le panel des groupes.");
-      }
-
-      const groups = await this.page.$$(
-        "::-p-xpath(//*[text()='Mes groupes']/parent::*/parent::*//div[contains(@class, 'active') and not(ancestor::div[contains(@class, 'tab-pane')])]//div[contains(@class, 'accordion-heading')])"
-      );
-
-      const list = await Promise.all(
-        groups.map(async (group) =>
-          group.evaluate((el) => el.textContent?.trim() || "")
-        )
-      );
-
-      return list;
-    } catch (error) {
-      logger.error(error);
+    if (!this.page) {
+      throw new Error("Page has not initialized.");
     }
+
+    const panel = await this.page.$(
+      "::-p-xpath(//*[text()='Mes groupes']/parent::*/parent::*)"
+    );
+
+    if (!panel) {
+      throw new Error("Impossible de trouver le panel des groupes.");
+    }
+
+    const groups = await this.page.$$(
+      "::-p-xpath(//*[text()='Mes groupes']/parent::*/parent::*//div[contains(@class, 'active') and not(ancestor::div[contains(@class, 'tab-pane')])]//div[contains(@class, 'accordion-heading')])"
+    );
+
+    const list = await Promise.all(
+      groups.map(async (group) =>
+        group.evaluate((el) => el.textContent?.trim() || "")
+      )
+    );
+
+    return list;
   }
 
   // Méthode pour fermer la page

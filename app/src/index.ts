@@ -87,10 +87,9 @@ async function start() {
             presence?.time.end.getTime()
           );
         }
-      } catch (error) {
-        if (!(error instanceof DiscordError)) {
-          logger.error(error);
-        }
+      } catch (error: any) {
+        logger.error("Error from presence cron");
+        logger.error(error.stack);
         continue;
       }
     }
@@ -151,10 +150,9 @@ async function start() {
           `${notification._id}-presence`,
           presence?.time.end.getTime()
         );
-      } catch (error) {
-        if (!(error instanceof DiscordError)) {
-          logger.error(error);
-        }
+      } catch (error: any) {
+        logger.error("Error from presence cron");
+        logger.error(error.stack);
         continue;
       }
     }
@@ -202,10 +200,9 @@ async function start() {
             });
           }
         }
-      } catch (error) {
-        if (!(error instanceof DiscordError)) {
-          logger.error(error);
-        }
+      } catch (error: any) {
+        logger.error("Error from today cron");
+        logger.error(error.stack);
         continue;
       }
     }
@@ -243,10 +240,9 @@ async function start() {
             });
           }
         }
-      } catch (error) {
-        if (!(error instanceof DiscordError)) {
-          logger.error(error);
-        }
+      } catch (error: any) {
+        logger.error("Error from week cron");
+        logger.error(error.stack);
         continue;
       }
     }

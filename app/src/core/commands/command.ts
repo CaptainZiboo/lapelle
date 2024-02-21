@@ -81,12 +81,13 @@ export class BaseCommand {
       await this.authenticate(interaction.user.id);
       await this.run({ interaction, client, handler });
     } catch (error: any) {
+      logger.error("Error from command");
+      logger.error(error.stack);
       // Handle (and display) the error
       await DiscordError.handle({
         interaction: this.interaction || interaction,
         error,
       });
-      logger.error(error.stack);
     }
   }
 

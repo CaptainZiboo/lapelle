@@ -1,4 +1,5 @@
 import {
+  DiscordError,
   NoCourseToday,
   NoCurrentCourse,
   NoGroupFound,
@@ -396,23 +397,32 @@ export class Devinci {
       // Try to get courses from user portal
       const portail = new Portail(user);
 
-      const syncGroupsCourses = await portail.use<Course[]>((p) =>
-        p.getTodayCourses()
-      );
+      try {
+        const syncGroupsCourses = await portail.use<Course[]>((p) =>
+          p.getTodayCourses()
+        );
 
-      // If error while retrieving courses, continue
-      if (!syncGroupsCourses) {
+        if (!syncGroupsCourses) {
+          continue;
+        }
+
+        // Else, add courses to list
+        courses.push(...syncGroupsCourses);
+
+        // Add user groups to done list
+        syncUserGroups.forEach((group) => processed.add(group.name));
+
+        // If all groups have been done, break loop
+        if (selected.every((group) => processed.has(group.name))) break;
+      } catch (error: any) {
+        logger.error("Error from devinci.getGroupsTodayCourses");
+        logger.error(error.stack);
+        if (!(error instanceof DiscordError)) {
+          throw error;
+        }
+        // If error while retrieving courses, continue
         continue;
       }
-
-      // Else, add courses to list
-      courses.push(...syncGroupsCourses);
-
-      // Add user groups to done list
-      syncUserGroups.forEach((group) => processed.add(group.name));
-
-      // If all groups have been done, break loop
-      if (selected.every((group) => processed.has(group.name))) break;
     }
 
     return {
@@ -474,25 +484,37 @@ export class Devinci {
 
       // Try to get courses from user portal
       const portail = new Portail(user);
-      const syncGroupsWeek = await portail.use<Week>((p) => p.getWeekCourses());
+      try {
+        const syncGroupsWeek = await portail.use<Week>((p) =>
+          p.getWeekCourses()
+        );
 
-      // If error while retrieving courses, continue
-      if (!syncGroupsWeek) {
+        // If error while retrieving courses, continue
+        if (!syncGroupsWeek) {
+          continue;
+        }
+
+        // Else, add courses to list
+        value = {
+          data: value
+            ? this.mergeWeekCourses([value.data, syncGroupsWeek])
+            : syncGroupsWeek,
+        };
+
+        // Add user groups to done list
+        syncUserGroups.forEach((group) => processed.add(group.name));
+
+        // If all groups have been done, break loop
+        if (selected.every((group) => processed.has(group.name))) break;
+      } catch (error: any) {
+        logger.error("Error from devinci.getGroupsWeekCourses");
+        logger.error(error.stack);
+        if (!(error instanceof DiscordError)) {
+          throw error;
+        }
+        // If error while retrieving courses, continue
         continue;
       }
-
-      // Else, add courses to list
-      value = {
-        data: value
-          ? this.mergeWeekCourses([value.data, syncGroupsWeek])
-          : syncGroupsWeek,
-      };
-
-      // Add user groups to done list
-      syncUserGroups.forEach((group) => processed.add(group.name));
-
-      // If all groups have been done, break loop
-      if (selected.every((group) => processed.has(group.name))) break;
     }
 
     return {
@@ -687,18 +709,28 @@ export class Devinci {
       // If user is in group, get presence
       for (const { user } of group.users) {
         const portail = new Portail(user);
-        const presence = await portail.use<PresenceStatus>((p) =>
-          p.getPresence(current)
-        );
+        try {
+          const presence = await portail.use<PresenceStatus>((p) =>
+            p.getPresence(current)
+          );
 
-        processed.add(group.name);
+          processed.add(group.name);
 
-        presence && cache.presences.set(current._id, presence);
+          presence && cache.presences.set(current._id, presence);
 
-        return {
-          data: presence,
-          meta,
-        };
+          return {
+            data: presence,
+            meta,
+          };
+        } catch (error: any) {
+          logger.error("Error from devinci.getGroupsPresence");
+          logger.error(error.stack);
+          if (!(error instanceof DiscordError)) {
+            throw error;
+          }
+          // If error while retrieving courses, continue
+          continue;
+        }
       }
     }
 

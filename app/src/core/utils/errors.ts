@@ -57,12 +57,19 @@ export class InvalidEmail extends DiscordError {
 
 export class InvalidPassword extends DiscordError {
   constructor() {
-    super(
-      "InvalidPassword",
-      CommandReplies.Error({
-        message: "Mot de passe invalide, veuillez rééssayer.",
-      })
-    );
+    const reply = CommandReplies.Error({
+      message: "Connexion au portail impossible, veuillez rééssayer.",
+    });
+
+    reply.embeds[0].setFields([
+      {
+        name: "Pourquoi ?",
+        value:
+          "Les identifiants que vous avez renseignés sont peut être incorrects. Il se peut également que le portail soit actuellement indisponible ou que la demande du bot soit trop importante.",
+      },
+    ]);
+
+    super("CouldNotLogin", reply);
   }
 }
 
