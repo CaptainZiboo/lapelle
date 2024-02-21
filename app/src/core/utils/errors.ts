@@ -44,8 +44,18 @@ export class DiscordError extends Error {
         });
       }
     } catch (error: any) {
-      logger.error("error from DiscordError.handle");
-      logger.error(error.stack);
+      try {
+        await interaction.followUp(
+          CommandReplies.Error({
+            override: {
+              ephemeral: true,
+            },
+          })
+        );
+      } finally {
+        logger.error("error from DiscordError.handle");
+        logger.error(error.stack);
+      }
     }
   }
 }
