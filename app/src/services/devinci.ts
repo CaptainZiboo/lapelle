@@ -407,7 +407,11 @@ export class Devinci {
         }
 
         // Else, add courses to list
-        courses.push(...syncGroupsCourses);
+        courses.push(
+          ...syncGroupsCourses.filter((c) =>
+            c.groups.some((g) => groupNames.includes(g))
+          )
+        );
 
         // Add user groups to done list
         syncUserGroups.forEach((group) => processed.add(group.name));
@@ -497,7 +501,18 @@ export class Devinci {
         // Else, add courses to list
         value = {
           data: value
-            ? this.mergeWeekCourses([value.data, syncGroupsWeek])
+            ? this.mergeWeekCourses([
+                value.data,
+                {
+                  ...syncGroupsWeek,
+                  days: syncGroupsWeek.days.map((day) => ({
+                    ...day,
+                    courses: day.courses.filter((course) =>
+                      course.groups.some((g) => groupNames.includes(g))
+                    ),
+                  })),
+                },
+              ])
             : syncGroupsWeek,
         };
 
@@ -625,7 +640,8 @@ export class Devinci {
     const current = courses.find(
       (course) =>
         course.time.beginning.getTime() <= now.getTime() &&
-        course.time.end.getTime() >= now.getTime()
+        course.time.end.getTime() >= now.getTime() &&
+        course.groups.some((group) => groupNames.includes(group))
     );
 
     if (!current) {
