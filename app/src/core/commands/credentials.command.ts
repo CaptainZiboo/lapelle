@@ -215,10 +215,6 @@ export class CredentialsCommand extends BaseCommand {
     // Set active interaction for error handling replies
     this.interaction = loginInteraction;
 
-    if (!loginInteraction.isRepliable()) {
-      logger.info("Interaction is not repliable");
-    }
-
     // Send waiting reply while checking credentials
     await loginInteraction.reply(
       CommandReplies.Waiting({
@@ -229,10 +225,6 @@ export class CredentialsCommand extends BaseCommand {
         },
       })
     );
-
-    if (!loginInteraction.isRepliable()) {
-      logger.info("Interaction is not repliable after waiting");
-    }
 
     // Get credentials from modal submit interaction
     const credentials = {
