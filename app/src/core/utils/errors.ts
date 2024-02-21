@@ -4,6 +4,7 @@ import {
   RepliableInteraction,
 } from "discord.js";
 import { CommandReplies } from "./replies";
+import { logger } from "./logger";
 
 export class DiscordError extends Error {
   constructor(message: string, public reply?: any) {
@@ -17,29 +18,34 @@ export class DiscordError extends Error {
     error: any;
     interaction: RepliableInteraction;
   }) {
-    if (error.message.trim().endsWith("time")) {
-      if (interaction.replied) {
-        await interaction.editReply(CommandReplies.TooLong());
-      } else {
-        await interaction.editReply(CommandReplies.TooLong());
+    try {
+      if (error.message.trim().endsWith("time")) {
+        if (interaction.replied) {
+          await interaction.editReply(CommandReplies.TooLong());
+        } else {
+          await interaction.editReply(CommandReplies.TooLong());
+        }
+
+        return;
       }
 
-      return;
-    }
+      let reply = CommandReplies.Error();
 
-    let reply = CommandReplies.Error();
+      if (error instanceof DiscordError && error.reply) {
+        reply = error.reply;
+      }
 
-    if (error instanceof DiscordError && error.reply) {
-      reply = error.reply;
-    }
-
-    if (interaction.replied) {
-      return interaction.editReply(reply);
-    } else {
-      return interaction.reply({
-        ...reply,
-        ephemeral: true,
-      });
+      if (interaction.replied) {
+        return interaction.editReply(reply);
+      } else {
+        return interaction.reply({
+          ...reply,
+          ephemeral: true,
+        });
+      }
+    } catch (error: any) {
+      logger.error("error from DiscordError.handle");
+      logger.error(error.stack);
     }
   }
 }

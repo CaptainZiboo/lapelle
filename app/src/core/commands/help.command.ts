@@ -66,6 +66,7 @@ export class HelpCommand extends BaseCommand {
           },
         ]),
       ],
+      ephemeral: true,
     });
   }
 }
