@@ -70,7 +70,6 @@ export class Browser {
         }
       } else {
         this.processing = false;
-        await this.close();
       }
       this.retries = 0;
     } catch (error: any) {
