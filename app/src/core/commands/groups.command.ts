@@ -226,11 +226,15 @@ export class GroupsCommand extends BaseCommand {
 
     const names = ModalSubmitInteraction.fields
       .getTextInputValue("name")
-      .split(/,|\s|\n/);
+      .split(/,|\s|\n/)
+      .map((name) => name.trim())
+      .filter((name) => name !== "");
+
+    const uniqueNames = [...new Set(names)];
 
     const userAddedGroups = await db
       .insert(groups)
-      .values(names.map((name) => ({ name })))
+      .values(uniqueNames.map((name) => ({ name })))
       .onConflictDoUpdate({
         target: [groups.name],
         set: {
@@ -252,23 +256,40 @@ export class GroupsCommand extends BaseCommand {
       .execute();
 
     await Promise.all([
-      ModalSubmitInteraction.reply({
-        embeds: [
-          SimpleEmbed({
-            content: `Vous avez rejoint les ${userAddedGroups.length} nouveau(x) groupe(s) !`,
-            emoji: "✅",
-          }).addFields([
-            {
-              name: "Vous avez rejoint les groupes suivants :",
-              value: `\`\`\`\n${userAddedGroups
-                .map((group) => group.name)
-                .join("\n")}\`\`\``,
-            },
-          ]),
-        ],
-        components: [],
-        ephemeral: true,
-      }),
+      ModalSubmitInteraction.isRepliable() && !ModalSubmitInteraction.replied
+        ? ModalSubmitInteraction.reply({
+            embeds: [
+              SimpleEmbed({
+                content: `Vous avez rejoint les ${userAddedGroups.length} nouveau(x) groupe(s) !`,
+                emoji: "✅",
+              }).addFields([
+                {
+                  name: "Vous avez rejoint les groupes suivants :",
+                  value: `\`\`\`\n${userAddedGroups
+                    .map((group) => group.name)
+                    .join("\n")}\`\`\``,
+                },
+              ]),
+            ],
+            components: [],
+            ephemeral: true,
+          })
+        : ModalSubmitInteraction.editReply({
+            embeds: [
+              SimpleEmbed({
+                content: `Vous avez rejoint les ${userAddedGroups.length} nouveau(x) groupe(s) !`,
+                emoji: "✅",
+              }).addFields([
+                {
+                  name: "Vous avez rejoint les groupes suivants :",
+                  value: `\`\`\`\n${userAddedGroups
+                    .map((group) => group.name)
+                    .join("\n")}\`\`\``,
+                },
+              ]),
+            ],
+            components: [],
+          }),
       this.update(),
     ]);
   }

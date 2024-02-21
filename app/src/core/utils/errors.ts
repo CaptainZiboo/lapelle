@@ -20,8 +20,8 @@ export class DiscordError extends Error {
   }) {
     try {
       if (error.message.trim().endsWith("time")) {
-        if (interaction.replied) {
-          await interaction.editReply(CommandReplies.TooLong());
+        if (interaction.isRepliable() && !interaction.replied) {
+          await interaction.reply(CommandReplies.TooLong());
         } else {
           await interaction.editReply(CommandReplies.TooLong());
         }
@@ -35,23 +35,38 @@ export class DiscordError extends Error {
         reply = error.reply;
       }
 
-      if (interaction.replied) {
-        return interaction.editReply(reply);
-      } else {
+      if (interaction.isRepliable() && !interaction.replied) {
         return interaction.reply({
+          ...reply,
+          ephemeral: true,
+        });
+      } else {
+        return interaction.editReply({
           ...reply,
           ephemeral: true,
         });
       }
     } catch (error: any) {
       try {
-        await interaction.followUp(
-          CommandReplies.Error({
-            override: {
-              ephemeral: true,
-            },
-          })
-        );
+        if (interaction.isRepliable() && !interaction.replied) {
+          await interaction.reply(
+            CommandReplies.Error({
+              override: {
+                ephemeral: true,
+              },
+            })
+          );
+        } else {
+          await interaction.followUp(
+            CommandReplies.Error({
+              override: {
+                ephemeral: true,
+              },
+            })
+          );
+        }
+      } catch (error: any) {
+        logger.error("unable to send error message");
       } finally {
         logger.error("error from DiscordError.handle");
         logger.error(error.stack);

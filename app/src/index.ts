@@ -20,7 +20,6 @@ import {
 import { getPresenceEmbed } from "./core/commands/presence.command";
 import cache from "./core/utils/cache";
 import { logger } from "./core/utils/logger";
-import { DiscordError } from "./core/utils/errors";
 
 dotenv.config();
 

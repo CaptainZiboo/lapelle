@@ -23,6 +23,7 @@ import { and, eq, notInArray } from "drizzle-orm";
 import { users, usersToGroups } from "../database/entities";
 import { sign } from "../utils/jwt";
 import { whitespace } from "../utils/text";
+import { logger } from "../utils/logger";
 
 export class CredentialsCommand extends BaseCommand {
   getButtons() {
@@ -133,6 +134,7 @@ export class CredentialsCommand extends BaseCommand {
           this.interaction = i;
 
           // Redirect interaction to the right handler
+          console.log("Are we going through collector ?");
           switch (i.customId) {
             case `${this.nonce}-credentials-login`:
               await this.login(i);
@@ -213,6 +215,10 @@ export class CredentialsCommand extends BaseCommand {
     // Set active interaction for error handling replies
     this.interaction = loginInteraction;
 
+    if (!loginInteraction.isRepliable()) {
+      logger.info("Interaction is not repliable");
+    }
+
     // Send waiting reply while checking credentials
     await loginInteraction.reply(
       CommandReplies.Waiting({
@@ -223,6 +229,10 @@ export class CredentialsCommand extends BaseCommand {
         },
       })
     );
+
+    if (!loginInteraction.isRepliable()) {
+      logger.info("Interaction is not repliable after waiting");
+    }
 
     // Get credentials from modal submit interaction
     const credentials = {
@@ -242,6 +252,8 @@ export class CredentialsCommand extends BaseCommand {
       .returning();
     this.user = updatedUsers[0];
 
+    console.log("test");
+
     // Send success reply
     await Promise.all([
       loginInteraction.editReply({
@@ -255,6 +267,8 @@ export class CredentialsCommand extends BaseCommand {
 
       this.update(),
     ]);
+
+    console.log("test2");
 
     // Ask if user wants to syncronize groups
     const syncButton = new ButtonBuilder({
