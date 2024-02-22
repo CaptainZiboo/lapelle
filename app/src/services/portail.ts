@@ -9,6 +9,7 @@ import {
 import { Scraper } from "./scraper";
 import { User } from "../core/database/entities";
 import { verify } from "../core/utils/jwt";
+import { isSurrogatePair } from "validator";
 
 export interface Presence {
   time: {
@@ -210,25 +211,26 @@ export class Portail extends Scraper {
     }
 
     const status: Status = await element.evaluate(() => {
-      const danger = document.querySelector(".danger.alert-danger");
+      const validate = document.querySelector("span#set-presence");
 
-      const success = document.querySelector(".success.alert-success");
-      if (success?.textContent?.includes("avez été noté présent")) {
-        if (danger?.textContent?.includes("L'appel est clôturé")) {
+      if (validate && validate.textContent?.includes("Valider la présence"))
+        return "open";
+
+      const danger = document.querySelector(".alert.alert-danger");
+
+      if (danger) {
+        if (danger.innerHTML.includes("L'appel n'est pas encore ouvert")) {
+          return "not-started";
+        } else if (danger.innerHTML.includes("L'appel est clôturé")) {
           return "closed";
-        } else {
-          return "open";
         }
       }
 
-      if (danger?.textContent?.includes("pas encore ouvert")) {
-        return "not-started";
-      } else if (danger) {
-        return "closed";
-      }
+      const success = document.querySelector(".alert.alert-success");
 
-      const validate = document.querySelector("span#set-presence");
-      if (validate?.textContent?.includes("Valider la présence")) return "open";
+      if (success) {
+        return "open";
+      }
 
       return "closed";
     });
